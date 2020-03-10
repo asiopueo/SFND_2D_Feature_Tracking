@@ -16,6 +16,8 @@
 #include "dataStructures.h"
 #include "matching2D.hpp"
 
+#include <boost/circular_buffer.hpp>
+
 using namespace std;
 
 /* MAIN PROGRAM */
@@ -37,8 +39,10 @@ int main(int argc, const char *argv[])
 
     // misc
     int dataBufferSize = 2;       // no. of images which are held in memory (ring buffer) at the same time
-    vector<DataFrame> dataBuffer; // list of data frames which are held in memory at the same time
+    //vector<DataFrame> dataBuffer; // list of data frames which are held in memory at the same time
+    boost::circular_buffer<DataFrame> dataBuffer(dataBufferSize);
     bool bVis = false;            // visualize results
+
 
     /* MAIN LOOP OVER ALL IMAGES */
 
@@ -62,7 +66,10 @@ int main(int argc, const char *argv[])
         // push image into data frame buffer
         DataFrame frame;
         frame.cameraImg = imgGray;
+        // Using boost library's circular_buffer since this one is already very efficient and reliable.
+        // As a result, we do not need to delete the following line:
         dataBuffer.push_back(frame);
+
 
         //// EOF STUDENT ASSIGNMENT
         cout << "#1 : LOAD IMAGE INTO BUFFER done" << endl;
