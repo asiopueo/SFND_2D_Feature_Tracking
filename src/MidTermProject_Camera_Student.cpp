@@ -86,16 +86,16 @@ int main(int argc, const char *argv[])
 
         if (detectorType.compare("SHITOMASI") == 0)
         {
-            detKeypointsShiTomasi(keypoints, imgGray, false);
+            detKeypointsShiTomasi(keypoints, imgGray, bVis);
         }
         else if (detectorType.compare("HARRIS") == 0)
         {
-            detKeypointsHarris(keypoints, imgGray, false);
+            detKeypointsHarris(keypoints, imgGray, bVis);
         }
         else if (detectorType.compare("FAST") == 0 || detectorType.compare("BRISK") == 0 || detectorType.compare("ORB") == 0 || 
                     detectorType.compare("AKAZE") == 0 || detectorType.compare("SIFT") == 0)
         {
-            detKeypointsModern(keypoints, imgGray, detectorType, false);
+            detKeypointsModern(keypoints, imgGray, detectorType, bVis);
         }
         else
         {
@@ -112,7 +112,11 @@ int main(int argc, const char *argv[])
         cv::Rect vehicleRect(535, 180, 180, 150);
         if (bFocusOnVehicle)
         {
-            // ...
+            // Iterate over the vector of all detected keypoints and keep only those within vehicleRect:
+            for (auto kp : keypoints)
+            {
+                cout << kp.pt.x << "\t" << kp.pt.y << endl;
+            }
         }
 
         //// EOF STUDENT ASSIGNMENT
