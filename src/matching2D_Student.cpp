@@ -18,40 +18,55 @@ void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::Key
     }
     else if (matcherType.compare("MAT_FLANN") == 0)
     {
-        // ...
+        // TODO
     }
 
     // perform matching task
     if (selectorType.compare("SEL_NN") == 0)
     { // nearest neighbor (best match)
-
         matcher->match(descSource, descRef, matches); // Finds the best match for each descriptor in desc1
     }
     else if (selectorType.compare("SEL_KNN") == 0)
     { // k nearest neighbors (k=2)
 
-        // ...
+        // TODO
     }
 }
 
 // Use one of several types of state-of-art descriptors to uniquely identify keypoints
+// BRISK, BRIEF, ORB, FREAK, AKAZE, SIFT
 void descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &descriptors, string descriptorType)
 {
     // select appropriate descriptor
     cv::Ptr<cv::DescriptorExtractor> extractor;
     if (descriptorType.compare("BRISK") == 0)
     {
-
         int threshold = 30;        // FAST/AGAST detection threshold score.
         int octaves = 3;           // detection octaves (use 0 to do single scale)
         float patternScale = 1.0f; // apply this scale to the pattern used for sampling the neighbourhood of a keypoint.
 
         extractor = cv::BRISK::create(threshold, octaves, patternScale);
     }
-    else
+    else if (descriptorType.compare("BRIEF") == 0)
+    {
+        // TODO
+        extractor = cv::xfeatures2d::BriefDescriptorExtractor::create();
+    }
+    else if (descriptorType.compare("ORB") == 0)
     {
 
-        //...
+    }
+    else if (descriptorType.compare("FREAK") == 0)
+    {
+        extractor = cv::xfeatures2d::FREAK::create();        
+    }
+    else if (descriptorType.compare("AKAZE") == 0)
+    {
+        
+    }
+    else if (descriptorType.compare("SIFT") == 0)
+    {
+        
     }
 
     // perform feature description
@@ -61,11 +76,8 @@ void descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &descr
     cout << descriptorType << " descriptor extraction in " << 1000 * t / 1.0 << " ms" << endl;
 }
 
-// Detect keypoints in image using the traditional Harris detector
-void detKeypointsHarris(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool bVis=false)
-{
 
-}
+
 
 // Detect keypoints in image using the traditional Shi-Thomasi detector
 void detKeypointsShiTomasi(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool bVis)
@@ -87,7 +99,6 @@ void detKeypointsShiTomasi(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool b
     // add corners to result vector
     for (auto it = corners.begin(); it != corners.end(); ++it)
     {
-
         cv::KeyPoint newKeyPoint;
         newKeyPoint.pt = cv::Point2f((*it).x, (*it).y);
         newKeyPoint.size = blockSize;
@@ -108,8 +119,57 @@ void detKeypointsShiTomasi(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool b
     }
 }
 
-// Detect keypoints in image using modern detectors
-void detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, std::string detectorType, bool bVis=false)
+// Detect keypoints in image using the traditional Harris detector
+void detKeypointsHarris(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool bVis)
 {
+    int blockSize = 4;
+    int kSize = 2;
+    double k = 0.1;
 
+    double t = (double)cv::getTickCount();
+    vector<cv::Point2f> corners;
+    //cv::cornerHarris(img, dst, blockSize, kSize, k, cv::BORDER_DEFAULT);
+    
+    for (auto it = corners.begin(); it != corners.end(); ++it)
+    {
+        cv::KeyPoint newKeyPoint;
+        newKeyPoint.pt = cv::Point2f((*it).x, (*it).y);
+        newKeyPoint.size = blockSize;
+        keypoints.push_back(newKeyPoint);
+    }
+
+    t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
+    cout << "Harris detection with n=" << keypoints.size() << " keypoints in " << 1000 * t / 1.0 << " ms" << endl;
+}
+
+// Detect keypoints in image using modern detectors
+// Options: FAST, BRISK, ORB, AKAZE, SIFT
+void detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, std::string detectorType, bool bVis)
+{
+    if (detectorType.compare("FAST") == 0)
+    {
+        double t = (double)cv::getTickCount();
+        // TODO
+        t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
+    }
+    else if (detectorType.compare("BRISK") == 0)
+    {
+        // TODO
+    }
+    else if (detectorType.compare("ORB") == 0)
+    {   
+        // TODO
+    }
+    else if (detectorType.compare("AKAZE") == 0)
+    {
+        // TODO
+    }
+    else if (detectorType.compare("SIFT") == 0)
+    {
+        // TODO
+    }
+    else
+    {
+        cerr << "Unknown detector type " << detectorType << "." << endl;
+    }
 }
