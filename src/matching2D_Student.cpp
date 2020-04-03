@@ -3,7 +3,7 @@
 
 using namespace std;
 
-// Selects descriptor 
+// Selects feature detector/descriptor:
 cv::Ptr<cv::Feature2D> detectorDescriptorFactory(const string type)
 {
     if (type.compare("BRISK") == 0)
@@ -145,9 +145,10 @@ void detKeypointsShiTomasi(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool b
     double qualityLevel = 0.01; // minimal accepted quality of image corners
     double k = 0.04;
 
+    vector<cv::Point2f> corners;
+
     // Apply corner detection
     double t = (double)cv::getTickCount();
-    vector<cv::Point2f> corners;
     cv::goodFeaturesToTrack(img, corners, maxCorners, qualityLevel, minDistance, cv::Mat(), blockSize, false, k);
 
     // add corners to result vector
@@ -174,23 +175,50 @@ void detKeypointsShiTomasi(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool b
 }
 
 // Detect keypoints in image using the traditional Harris detector
+// For details cf. https://docs.opencv.org/3.4/d4/d7d/tutorial_harris_detector.html
 void detKeypointsHarris(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool bVis)
 {
-    int blockSize = 4;
-    int kSize = 2;
-    double k = 0.1;
+    int blockSize = 2;
+    int aperture = 3;
+    double k = 0.04;
 
     double t = (double)cv::getTickCount();
-    vector<cv::Point2f> corners;
-    //cv::cornerHarris(img, dst, blockSize, kSize, k, cv::BORDER_DEFAULT);
+    cv::Mat score, scoreNormalized, scoreRescaled;
+    cv::cornerHarris(img, score, blockSize, aperture, k, cv::BORDER_DEFAULT);
+    cv::normalize(score, scoreNormalized, 0, 255, cv::NORM_MINMAX, CV_32FC1, cv::Mat());
+    cv::convertScaleAbs(scoreNormalized, scoreRescaled);
     
-    for (auto it = corners.begin(); it != corners.end(); ++it)
-    {
-        cv::KeyPoint newKeyPoint;
-        newKeyPoint.pt = cv::Point2f((*it).x, (*it).y);
-        newKeyPoint.size = blockSize;
-        keypoints.push_back(newKeyPoint);
+    const int minResponse = 100;
+    const float maxOverlap = 10;
+
+    for (size_t i=0; i<scoreNormalized.rows; ++i) {
+        for (size_t j=0; j<scoreNormalized.cols; ++j) {
+            int response = scoreNormalized.at<int>(i, j);
+            bool overlap = false;
+
+            if (response > minResponse)
+            {
+                cv::KeyPoint newKeyPoint(cv::Point2f(i, j), 2 * aperture, -1.0, response, 0, -1);
+
+                // Non-Maximum Suppression
+                for(auto it = keypoints.begin(); it != keypoints.end(); ++it) {
+                    if (cv::KeyPoint::overlap(newKeyPoint, *it) > maxOverlap)
+                    {
+                        overlap = true;
+                        if (newKeyPoint.response > (*it).response)
+                        {
+                            *it = newKeyPoint;
+                            break;
+                        }
+                    }
+                }
+                if(!overlap) 
+                    keypoints.push_back(newKeyPoint);
+            }
+        }
     }
+
+
 
     t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
     cout << "Harris detection with n=" << keypoints.size() << " keypoints in " << 1000 * t / 1.0 << " ms" << endl;
@@ -206,5 +234,4 @@ void detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, std:
     detector->detect(img, keypoints);
     t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
     cout << detectorType << " detector with n= " << keypoints.size() << " keypoints in " << 1000 * t / 1.0 << " ms" << endl;
-
 }
