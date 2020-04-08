@@ -110,15 +110,20 @@ int main(int argc, const char *argv[])
         // only keep keypoints on the preceding vehicle
         bool bFocusOnVehicle = true;
         cv::Rect vehicleRect(535, 180, 180, 150);
+        cout << keypoints.size() << endl;
         if (bFocusOnVehicle)
         {
             // Iterate over the vector of all detected keypoints and keep only those within vehicleRect:
+            std::vector<cv::KeyPoint> keypointsTmp;
             for (auto kp : keypoints)
             {
-                cout << kp.pt.x << "\t" << kp.pt.y << endl;
+                if (vehicleRect.contains(kp.pt)) {
+                    keypointsTmp.push_back(kp);
+                }
             }
+            keypoints = keypointsTmp;
         }
-
+        cout << keypoints.size() << endl;
         //// EOF STUDENT ASSIGNMENT
 
         // optional : limit number of keypoints (helpful for debugging and learning)
