@@ -189,31 +189,30 @@ void detKeypointsHarris(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool
     cv::convertScaleAbs(scoreNormalized, scoreRescaled);
     
     const int minResponse = 100;
-    const float maxOverlap = 10;
+    const float maxOverlap = 0;
 
     for (size_t i=0; i<scoreNormalized.rows; ++i) {
         for (size_t j=0; j<scoreNormalized.cols; ++j) {
-            int response = scoreNormalized.at<int>(i, j);
+            int response = (int) scoreNormalized.at<float>(i, j);
             bool overlap = false;
 
             if (response > minResponse)
             {
-                cv::KeyPoint newKeyPoint(cv::Point2f(i, j), 2 * aperture, -1.0, response, 0, -1);
-
+                cv::KeyPoint newKeyPoint(cv::Point2f(j,i), 2 * aperture, -1.0, response, 0, -1);
                 // Non-Maximum Suppression
                 for(auto it = keypoints.begin(); it != keypoints.end(); ++it) {
                     if (cv::KeyPoint::overlap(newKeyPoint, *it) > maxOverlap)
                     {
                         overlap = true;
-                        if (newKeyPoint.response > (*it).response)
-                        {
+                        if (newKeyPoint.response > (*it).response) {
                             *it = newKeyPoint;
                             break;
                         }
                     }
                 }
-                if(!overlap) 
+                if(!overlap) {
                     keypoints.push_back(newKeyPoint);
+                }
             }
         }
     }
