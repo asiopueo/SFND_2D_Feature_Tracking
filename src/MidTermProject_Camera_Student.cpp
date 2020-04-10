@@ -49,21 +49,24 @@ int main(int argc, const char *argv[])
     // Define detector/descriptor type vectors for automated testing:
     vector<string> detectors, descriptors;
     //detectors.push_back("SIFT");
-    detectors.push_back("HARRIS");
+    /*detectors.push_back("HARRIS");
     detectors.push_back("SHITOMASI");
     detectors.push_back("FAST");
     detectors.push_back("BRISK");
-    detectors.push_back("ORB");
+    detectors.push_back("ORB");*/
     detectors.push_back("AKAZE");  
+    
+    //descriptors.push_back("SIFT");
     descriptors.push_back("BRISK");
     descriptors.push_back("BRIEF");
     descriptors.push_back("ORB");
     descriptors.push_back("FREAK");
     descriptors.push_back("AKAZE");
-    descriptors.push_back("SIFT");
 
     for (string detectorType : detectors) {
         for (string descriptorType : descriptors) {
+
+            dataBuffer.clear(); // Clear all buffer contents. Added for the automated testing loop.
 
             cout    << "***************************************" << endl
                     << "Detector: " << detectorType << endl 
@@ -198,7 +201,7 @@ int main(int argc, const char *argv[])
 
                     vector<cv::DMatch> matches;
                     string matcherType = "MAT_BF";        // MAT_BF, MAT_FLANN
-                    string descriptorType = "DES_BINARY"; // DES_BINARY, DES_HOG
+                    //string descriptorType = "DES_BINARY"; // DES_BINARY, DES_HOG -- Note: Naming of this variable collides with the above one. Bad practice!
                     string selectorType = "SEL_NN";       // SEL_NN, SEL_KNN
 
                     //// STUDENT ASSIGNMENT
