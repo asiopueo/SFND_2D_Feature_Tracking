@@ -48,27 +48,34 @@ int main(int argc, const char *argv[])
 
     // Define detector/descriptor type vectors for automated testing:
     vector<string> detectors, descriptors;
-    detectors.push_back("HARRIS");
-    //detectors.push_back("SHITOMASI");
-    //detectors.push_back("FAST");
-    //detectors.push_back("BRISK");
-    //detectors.push_back("ORB");
     //detectors.push_back("SIFT");
-    //detectors.push_back("AKAZE");  
+    detectors.push_back("HARRIS");
+    detectors.push_back("SHITOMASI");
+    detectors.push_back("FAST");
+    detectors.push_back("BRISK");
+    detectors.push_back("ORB");
+    detectors.push_back("AKAZE");  
     descriptors.push_back("BRISK");
-    //descriptors.push_back("BRIEF");
-    //descriptors.push_back("ORB");
-    //descriptors.push_back("FREAK");
-    //descriptors.push_back("AKAZE");
-    //descriptors.push_back("SIFT");
+    descriptors.push_back("BRIEF");
+    descriptors.push_back("ORB");
+    descriptors.push_back("FREAK");
+    descriptors.push_back("AKAZE");
+    descriptors.push_back("SIFT");
 
     for (string detectorType : detectors) {
         for (string descriptorType : descriptors) {
+
+            cout    << "***************************************" << endl
+                    << "Detector: " << detectorType << endl 
+                    << "Descriptor: " << descriptorType << endl
+                    << "***************************************" << endl;
+
 
             // Original loop starts here:
             for (size_t imgIndex = 0; imgIndex <= imgEndIndex - imgStartIndex; imgIndex++)
             {
                 /* LOAD IMAGE INTO BUFFER */
+                cout << "Analyzing image " << imgIndex << " of " << imgEndIndex << endl;
 
                 // assemble filenames for current index
                 ostringstream imgNumber;
@@ -92,7 +99,7 @@ int main(int argc, const char *argv[])
 
 
                 //// EOF STUDENT ASSIGNMENT
-                cout << "#1 : LOAD IMAGE INTO BUFFER done" << endl;
+                cout << "\t#1 : LOAD IMAGE INTO BUFFER done" << endl;
 
                 /* DETECT IMAGE KEYPOINTS */
 
@@ -130,7 +137,9 @@ int main(int argc, const char *argv[])
                 // only keep keypoints on the preceding vehicle
                 bool bFocusOnVehicle = true;
                 cv::Rect vehicleRect(535, 180, 180, 150);
-                cout << keypoints.size() << endl;
+                
+                cout << "\tTotal number of detected keypoints: " << keypoints.size() << endl;
+
                 if (bFocusOnVehicle)
                 {
                     // Iterate over the vector of all detected keypoints and keep only those within vehicleRect:
@@ -143,7 +152,9 @@ int main(int argc, const char *argv[])
                     }
                     keypoints = keypointsTmp;
                 }
-                cout << "Detected keypoints: " << keypoints.size() << endl;
+                
+                cout << "\tDetected keypoints in ROI: " << keypoints.size() << endl;
+                                
                 //// EOF STUDENT ASSIGNMENT
 
                 // optional : limit number of keypoints (helpful for debugging and learning)
@@ -162,7 +173,7 @@ int main(int argc, const char *argv[])
 
                 // push keypoints and descriptor for current frame to end of data buffer
                 (dataBuffer.end() - 1)->keypoints = keypoints;
-                cout << "#2 : DETECT KEYPOINTS done" << endl;
+                cout << "\t#2 : DETECT KEYPOINTS done" << endl;
 
                 /* EXTRACT KEYPOINT DESCRIPTORS */
 
@@ -178,7 +189,7 @@ int main(int argc, const char *argv[])
                 // push descriptors for current frame to end of data buffer
                 (dataBuffer.end() - 1)->descriptors = descriptors;
 
-                cout << "#3 : EXTRACT DESCRIPTORS done" << endl;
+                cout << "\t#3 : EXTRACT DESCRIPTORS done" << endl;
 
                 if (dataBuffer.size() > 1) // wait until at least two images have been processed
                 {
@@ -203,10 +214,10 @@ int main(int argc, const char *argv[])
                     // store matches in current data frame
                     (dataBuffer.end() - 1)->kptMatches = matches;
 
-                    cout << "#4 : MATCH KEYPOINT DESCRIPTORS done" << endl;
+                    cout << "\t#4 : MATCH KEYPOINT DESCRIPTORS done" << endl;
 
                     // visualize matches between current and previous image
-                    bVis = true;
+                    bVis = false;
                     if (bVis)
                     {
                         cv::Mat matchImg = ((dataBuffer.end() - 1)->cameraImg).clone();
