@@ -47,7 +47,9 @@ cv::Ptr<cv::Feature2D> detectorDescriptorFactory(const string type)
         float threshold = 0.001;
         int nOctaves = 4;
         int nOctaveLayers = 4;
-        return cv::AKAZE::create(cv::AKAZE::DESCRIPTOR_MLDB, descriptor_size, descriptor_size, threshold, nOctaves, nOctaveLayers, cv::KAZE::DIFF_PM_G2);
+        // Somehow doesn't work this way, although both should be the same by default:
+        //return cv::AKAZE::create(cv::AKAZE::DESCRIPTOR_MLDB, descriptor_size, descriptor_size, threshold, nOctaves, nOctaveLayers, cv::KAZE::DIFF_PM_G2);
+        return cv::AKAZE::create();
     }
     else if (type.compare("SIFT") == 0)
     {
@@ -87,14 +89,13 @@ void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::Key
     
     if (matcherType.compare("MAT_BF") == 0)
     {
-
-        if (descriptorType=="BRIEF")
+        if (descriptorType.compare("BRIEF") == 0)
         {
             cout << descriptorType << endl;
             int normType = cv::NORM_L2;
             matcher = cv::BFMatcher::create(normType, crossCheck);
         }
-        else // BRIEF, BRISK, ORB, FREAK and KAZE
+        else // BRIEF, BRISK, ORB, FREAK and AKAZE
         {
             int normType = cv::NORM_HAMMING;
             matcher = cv::BFMatcher::create(normType, crossCheck);    
