@@ -84,17 +84,27 @@ void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::Key
     // configure matcher
     bool crossCheck = false;
     cv::Ptr<cv::DescriptorMatcher> matcher;
-
+    
     if (matcherType.compare("MAT_BF") == 0)
     {
-        int normType = cv::NORM_HAMMING;
-        matcher = cv::BFMatcher::create(normType, crossCheck);
+
+        if (descriptorType=="BRIEF")
+        {
+            cout << descriptorType << endl;
+            int normType = cv::NORM_L2;
+            matcher = cv::BFMatcher::create(normType, crossCheck);
+        }
+        else // BRIEF, BRISK, ORB, FREAK and KAZE
+        {
+            int normType = cv::NORM_HAMMING;
+            matcher = cv::BFMatcher::create(normType, crossCheck);    
+        }
     }
     else if (matcherType.compare("MAT_FLANN") == 0)
     {
         matcher = cv::FlannBasedMatcher::create();
     }
-
+    
     // perform matching task
     if (selectorType.compare("SEL_NN") == 0)
     {   
@@ -108,7 +118,7 @@ void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::Key
         matcher->knnMatch(descSource, descRef, knnMatches, 2);  // k=2
         
         // Lowe's ratio test:
-        const float ratio_thresh = 0.7;
+        const float ratio_thresh = 0.8;
         for (size_t i=0; i<knnMatches.size(); ++i)
             if (knnMatches[0][i].distance < ratio_thresh * knnMatches[i][1].distance)
                 matches.push_back(knnMatches[i][0]);
@@ -121,7 +131,6 @@ void descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &descr
 {
     // select appropriate descriptor
     cv::Ptr<cv::DescriptorExtractor> extractor = detectorDescriptorFactory(descriptorType);
-    
     // perform feature description
     double t = (double)cv::getTickCount();
     extractor->compute(img, keypoints, descriptors);
