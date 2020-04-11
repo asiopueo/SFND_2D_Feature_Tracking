@@ -48,7 +48,7 @@ int main(int argc, const char *argv[])
 
     // Define detector/descriptor type vectors for automated testing:
     vector<string> detectors, descriptors;
-    //detectors.push_back("SIFT");
+    detectors.push_back("SIFT");
     detectors.push_back("HARRIS");
     detectors.push_back("SHITOMASI");
     detectors.push_back("FAST");    // Detector only
@@ -56,10 +56,10 @@ int main(int argc, const char *argv[])
     detectors.push_back("ORB");
     detectors.push_back("AKAZE");  
     
-    //descriptors.push_back("SIFT");
+    descriptors.push_back("SIFT");
     descriptors.push_back("BRISK");
     descriptors.push_back("BRIEF");
-    descriptors.push_back("ORB");
+    descriptors.push_back("ORB"); // Does not work with SIFT detector
     descriptors.push_back("FREAK");
     descriptors.push_back("AKAZE"); // Only works with AKAZE keypoints
 
@@ -68,7 +68,9 @@ int main(int argc, const char *argv[])
 
             // Exception for AKAZE detector/descriptor combination:
             if ( !(detectorType.compare("AKAZE") == 0) != !(descriptorType.compare("AKAZE") == 0) ) continue;
-
+            
+            // Exception for SIFT / ORB combination:
+            if ( (detectorType.compare("SIFT") == 0) && (descriptorType.compare("ORB") == 0) ) continue;
 
 
             dataBuffer.clear(); // Clear all buffer contents. Added for the automated testing loop.
