@@ -127,7 +127,7 @@ void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::Key
 
 // Use one of several types of state-of-art descriptors to uniquely identify keypoints
 // BRISK, BRIEF, ORB, FREAK, AKAZE, SIFT
-void descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &descriptors, string descriptorType)
+void descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &descriptors, string descriptorType, std::vector<double> &descriptorTimes)
 {
     // select appropriate descriptor
     cv::Ptr<cv::DescriptorExtractor> extractor = detectorDescriptorFactory(descriptorType);
@@ -135,6 +135,7 @@ void descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &descr
     double t = (double)cv::getTickCount();
     extractor->compute(img, keypoints, descriptors);
     t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
+    descriptorTimes.push_back(1000*t / 1.0);
     cout << "\t" << descriptorType << " descriptor extraction in " << 1000 * t / 1.0 << " ms" << endl;
 }
 
@@ -143,7 +144,7 @@ void descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &descr
 
 
 // Detect keypoints in image using the traditional Shi-Thomasi detector
-void detKeypointsShiTomasi(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool bVis)
+void detKeypointsShiTomasi(vector<cv::KeyPoint> &keypoints, cv::Mat &img, std::vector<double> &detectorTimes, bool bVis)
 {
     // compute detector parameters based on image size
     int blockSize = 4;       //  size of an average block for computing a derivative covariation matrix over each pixel neighborhood
@@ -169,6 +170,7 @@ void detKeypointsShiTomasi(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool b
         keypoints.push_back(newKeyPoint);
     }
     t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
+    detectorTimes.push_back(1000*t);
     cout << "\tShi-Tomasi detection with n=" << keypoints.size() << " keypoints in " << 1000 * t / 1.0 << " ms" << endl;
 
     // visualize results
@@ -185,7 +187,7 @@ void detKeypointsShiTomasi(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool b
 
 // Detect keypoints in image using the traditional Harris detector
 // For details cf. https://docs.opencv.org/3.4/d4/d7d/tutorial_harris_detector.html
-void detKeypointsHarris(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool bVis)
+void detKeypointsHarris(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, std::vector<double> &detectorTimes, bool bVis)
 {
     int blockSize = 2;
     int aperture = 3;
@@ -229,17 +231,19 @@ void detKeypointsHarris(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool
 
 
     t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
+    detectorTimes.push_back(1000*t);
     cout << "\tHarris detection with n=" << keypoints.size() << " keypoints in " << 1000 * t / 1.0 << " ms" << endl;
 }
 
 // Detect keypoints in image using modern detectors
 // Options: FAST, BRISK, ORB, AKAZE, SIFT
-void detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, std::string detectorType, bool bVis)
+void detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, std::string detectorType, std::vector<double> &detectorTimes, bool bVis)
 {
     cv::Ptr<cv::FeatureDetector> detector = detectorDescriptorFactory(detectorType);
 
     double t = (double)cv::getTickCount();
     detector->detect(img, keypoints);
     t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
+    detectorTimes.push_back(1000*t);
     cout << "\t" << detectorType << " detector with n= " << keypoints.size() << " keypoints in " << 1000 * t / 1.0 << " ms" << endl;
 }

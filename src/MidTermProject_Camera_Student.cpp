@@ -16,6 +16,7 @@
 #include "dataStructures.h"
 #include "matching2D.hpp"
 
+#include <numeric>
 #include <boost/circular_buffer.hpp>
 
 using namespace std;
@@ -63,6 +64,9 @@ int main(int argc, const char *argv[])
     descriptors.push_back("FREAK");
     descriptors.push_back("AKAZE"); // Only works with AKAZE keypoints
 
+    std::vector<double> detectorTimes, descriptorTimes;
+
+
     for (string detectorType : detectors) {
         for (string descriptorType : descriptors) {
 
@@ -73,7 +77,11 @@ int main(int argc, const char *argv[])
             if ( (detectorType.compare("SIFT") == 0) && (descriptorType.compare("ORB") == 0) ) continue;
 
 
-            dataBuffer.clear(); // Clear all buffer contents. Added for the automated testing loop.
+            // Clear all buffer contents. Added for the automated testing loop:
+            dataBuffer.clear(); 
+            detectorTimes.clear();
+            descriptorTimes.clear();
+
 
             cout    << "***************************************" << endl
                     << "Detector: " << detectorType << endl 
@@ -123,16 +131,16 @@ int main(int argc, const char *argv[])
 
                 if (detectorType.compare("SHITOMASI") == 0)
                 {
-                    detKeypointsShiTomasi(keypoints, imgGray, bVis);
+                    detKeypointsShiTomasi(keypoints, imgGray, detectorTimes, bVis);
                 }
                 else if (detectorType.compare("HARRIS") == 0)
                 {
-                    detKeypointsHarris(keypoints, imgGray, bVis);
+                    detKeypointsHarris(keypoints, imgGray, detectorTimes, bVis);
                 }
                 else if (detectorType.compare("FAST") == 0 || detectorType.compare("BRISK") == 0 || detectorType.compare("ORB") == 0 || 
                             detectorType.compare("AKAZE") == 0 || detectorType.compare("SIFT") == 0)
                 {
-                    detKeypointsModern(keypoints, imgGray, detectorType, bVis);
+                    detKeypointsModern(keypoints, imgGray, detectorType, detectorTimes, bVis);
                 }
                 else
                 {
@@ -193,7 +201,7 @@ int main(int argc, const char *argv[])
 
                 cv::Mat descriptors;
                 //string descriptorType = "BRISK"; // BRIEF, ORB, FREAK, AKAZE, SIFT
-                descKeypoints((dataBuffer.end() - 1)->keypoints, (dataBuffer.end() - 1)->cameraImg, descriptors, descriptorType);
+                descKeypoints((dataBuffer.end() - 1)->keypoints, (dataBuffer.end() - 1)->cameraImg, descriptors, descriptorType, descriptorTimes);
                 //// EOF STUDENT ASSIGNMENT
 
                 // push descriptors for current frame to end of data buffer
@@ -247,6 +255,21 @@ int main(int argc, const char *argv[])
                 }
 
             } // eof loop over all images
+
+
+            double avgDetectorTime = 0.;
+            double avgDescriptorTime = 0.;
+
+            avgDetectorTime = std::accumulate(detectorTimes.begin(), detectorTimes.end(), 0.) / detectorTimes.size();
+            avgDescriptorTime = std::accumulate(descriptorTimes.begin(), descriptorTimes.end(), 0.) / descriptorTimes.size();
+
+
+            cout    << "***************************************" << endl
+                    << "Avg. detector time: " << avgDetectorTime << "ms" << endl 
+                    << "Avg. descriptor time: " << avgDescriptorTime << "ms" << endl
+                    << "***************************************" << endl
+                    << "***************************************" << endl << endl << endl;
+
         }
     }
     
