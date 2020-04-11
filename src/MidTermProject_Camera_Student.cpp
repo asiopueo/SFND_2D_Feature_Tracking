@@ -65,7 +65,7 @@ int main(int argc, const char *argv[])
     descriptors.push_back("AKAZE"); // Only works with AKAZE keypoints
 
     std::vector<double> detectorTimes, descriptorTimes;
-
+    std::vector<int> matchedKeypoints;
 
     for (string detectorType : detectors) {
         for (string descriptorType : descriptors) {
@@ -81,12 +81,13 @@ int main(int argc, const char *argv[])
             dataBuffer.clear(); 
             detectorTimes.clear();
             descriptorTimes.clear();
+            matchedKeypoints.clear();
 
 
-            cout    << "***************************************" << endl
-                    << "Detector: " << detectorType << endl 
-                    << "Descriptor: " << descriptorType << endl
-                    << "***************************************" << endl;
+            std::cout   << "***************************************" << endl
+                        << "Detector: " << detectorType << endl 
+                        << "Descriptor: " << descriptorType << endl
+                        << "***************************************" << endl;
 
 
             // Original loop starts here:
@@ -153,10 +154,10 @@ int main(int argc, const char *argv[])
                 //// TASK MP.3 -> only keep keypoints on the preceding vehicle
 
                 // only keep keypoints on the preceding vehicle
-                bool bFocusOnVehicle = true;
+                bool bFocusOnVehicle = false;
                 cv::Rect vehicleRect(535, 180, 180, 150);
                 
-                cout << "\tTotal number of detected keypoints: " << keypoints.size() << endl;
+                std::cout << "\tTotal number of detected keypoints: " << keypoints.size() << endl;
 
                 if (bFocusOnVehicle)
                 {
@@ -171,7 +172,7 @@ int main(int argc, const char *argv[])
                     keypoints = keypointsTmp;
                 }
                 
-                cout << "\tDetected keypoints in ROI: " << keypoints.size() << endl;
+                std::cout << "\tDetected keypoints in ROI: " << keypoints.size() << endl;
                                 
                 //// EOF STUDENT ASSIGNMENT
 
@@ -186,12 +187,12 @@ int main(int argc, const char *argv[])
                         keypoints.erase(keypoints.begin() + maxKeypoints, keypoints.end());
                     }
                     cv::KeyPointsFilter::retainBest(keypoints, maxKeypoints);
-                    cout << " NOTE: Keypoints have been limited!" << endl;
+                    std::cout << " NOTE: Keypoints have been limited!" << endl;
                 }
 
                 // push keypoints and descriptor for current frame to end of data buffer
                 (dataBuffer.end() - 1)->keypoints = keypoints;
-                cout << "\t#2 : DETECT KEYPOINTS done" << endl;
+                std::cout << "\t#2 : DETECT KEYPOINTS done" << endl;
 
                 /* EXTRACT KEYPOINT DESCRIPTORS */
 
@@ -232,7 +233,10 @@ int main(int argc, const char *argv[])
                     // store matches in current data frame
                     (dataBuffer.end() - 1)->kptMatches = matches;
 
-                    cout << "\t#4 : MATCH KEYPOINT DESCRIPTORS done" << endl;
+                    std::cout << "\t#4 : MATCH KEYPOINT DESCRIPTORS done" << endl;
+
+                    matchedKeypoints.push_back(matches.size());
+                    std::cout << "\tNumber of matched keypoints: " << matches.size() << endl;
 
                     // visualize matches between current and previous image
                     bVis = false;
@@ -248,7 +252,7 @@ int main(int argc, const char *argv[])
                         string windowName = "Matching keypoints between two camera images";
                         cv::namedWindow(windowName, 7);
                         cv::imshow(windowName, matchImg);
-                        cout << "Press key to continue to next image" << endl;
+                        std::cout << "Press key to continue to next image" << endl;
                         cv::waitKey(0); // wait for key to be pressed
                     }
                     bVis = false;
@@ -259,16 +263,19 @@ int main(int argc, const char *argv[])
 
             double avgDetectorTime = 0.;
             double avgDescriptorTime = 0.;
+            double avgMatchedKpts = 0;
 
             avgDetectorTime = std::accumulate(detectorTimes.begin(), detectorTimes.end(), 0.) / detectorTimes.size();
             avgDescriptorTime = std::accumulate(descriptorTimes.begin(), descriptorTimes.end(), 0.) / descriptorTimes.size();
+            avgMatchedKpts = std::accumulate(matchedKeypoints.begin(), matchedKeypoints.end(), 0.) / matchedKeypoints.size();
 
 
-            cout    << "***************************************" << endl
-                    << "Avg. detector time: " << avgDetectorTime << "ms" << endl 
-                    << "Avg. descriptor time: " << avgDescriptorTime << "ms" << endl
-                    << "***************************************" << endl
-                    << "***************************************" << endl << endl << endl;
+            std::cout   << "***************************************" << endl
+                        << "Avg. detector time: " << avgDetectorTime << "ms" << endl 
+                        << "Avg. descriptor time: " << avgDescriptorTime << "ms" << endl
+                        << "Avg. number of matched keypoints: " << avgMatchedKpts << endl
+                        << "***************************************" << endl
+                        << "***************************************" << endl << endl << endl;
 
         }
     }
