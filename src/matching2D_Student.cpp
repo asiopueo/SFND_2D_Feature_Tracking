@@ -89,9 +89,8 @@ void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::Key
     
     if (matcherType.compare("MAT_BF") == 0)
     {
-        if (descriptorType.compare("BRIEF") == 0)
+        if (descriptorType.compare("SIFT") == 0)
         {
-            cout << descriptorType << endl;
             int normType = cv::NORM_L2;
             matcher = cv::BFMatcher::create(normType, crossCheck);
         }
