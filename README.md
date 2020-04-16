@@ -1,15 +1,134 @@
 # SFND 2D Feature Tracking
+The contents of this repository represent my submission for the midterm project of the camera chapter of Udacity's Sensor Fusion Engineer nanodegree.
 
-<img src="images/keypoints.png" width="820" height="248" />
+The final goal of this and the succeeding projects is to develop a TTC (time-to-collision) estimator based on monocular camera images and Lidar data.
 
-The idea of the camera course is to build a collision detection system - that's the overall goal for the Final Project. As a preparation for this, you will now build the feature tracking part and test various detector / descriptor combinations to see which ones perform best. This mid-term project consists of four parts:
+The purpose of this intermediate project is to develop a TTC estimator which only relies on monocular visual information. The detector is based on so-called keypoint detection and matching algorithms.
 
-* First, you will focus on loading images, setting up data structures and putting everything into a ring buffer to optimize memory load. 
-* Then, you will integrate several keypoint detectors such as HARRIS, FAST, BRISK and SIFT and compare them with regard to number of keypoints and speed. 
-* In the next part, you will then focus on descriptor extraction and matching using brute force and also the FLANN approach we discussed in the previous lesson. 
-* In the last part, once the code framework is complete, you will test the various algorithms in different combinations and compare them with regard to some performance measures. 
+The following detectors and descriptors have been scrutinized in this project:
 
-See the classroom instruction and code comments for more details on each of these parts. Once you are finished with this project, the keypoint matching part will be set up and you can proceed to the next lesson, where the focus is on integrating Lidar points and on object detection using deep-learning. 
+**Keypoint detectors:** SIFT, (Harris), (Shi-Tomasi), FAST, BRISK, ORB, and AKAZE, 
+
+**Keypoint descriptors:** SIFT, BRISK, BRIEF, ORB, FREAK, AKAZE
+
+
+|              | SIFT| BRISK| BRIEF| ORB | FREAK|AKAZE|
+|:------------:|:---:|:----:|:----:|:---:|:----:|:---:|
+| SIFT         |     |      |      |  -  |      |  -  |
+| (Harris)     |     |      |      |     |      |  -  |
+| (Shi-Tomasi) |     |      |      |     |      |  -  |
+| FAST         |     |      |      |     |      |  -  |
+| BRISK        |     |      |      |     |      |  -  |
+| ORB          |     |      |      |     |      |  -  |
+| AKAZE        |  -  |  -   |   -  |  -  |   -  |     |
+
+
+Notice that the detectors in parentheses were not required for the benchmark but where included nontheless. The Harris detector has been implemented as part of this assignment.
+
+
+## Implementation
+The second largest change is the implementation of the function ´detectorDescriptorFactory´ which unifies the creation of OpenCV-based detectors and descriptors.
+
+## Data Buffer
+### MP.1 Data Buffer Optimization
+For the data buffer, my choice fell onto the well-known ring buffer implementation of the *boost library*,
+
+    boost::circular_buffer<T> 
+    
+because of its readily available and proven implementation. Of course, a simpler solution in form of a simple ´std::vector<T>´ would have satisfied our requirement. Notice that, when using the `vector` class, the size `dataBufferSize` of the buffer can alread be initialized by
+
+    std::vector<DataFrame> dataBuffer(dataBufferSize)
+
+hence circumventing the need for dynamic reallocation of the vector.
+
+
+## Keypoints
+### MP.2 Keypoint Detection
+The keypoint detectors have been implemented in the file `matching2D_Student.cpp`. Here, the function 
+
+    cv::Ptr<cv::Feature2D> detectorDescriptorFactory(const string type)
+
+takes a string describing the detector type and returns a pointer for the initialized detector. Internally, a simple if-else-structure selects the detector type, and a final else-clause catches the case when the string has no matching detector or descriptor type.
+
+
+### MP.3 Keypoint Removal
+This assignment requires the removal of keypoints outside a region described by the rectangle
+
+    cv::Rect vehicleRect(535, 180, 180, 150)
+
+This is done by the simple for-loop given by:
+
+    std::vector<cv::KeyPoint> keypointsTmp;
+    for (auto kp : keypoints)
+    {
+        if (vehicleRect.contains(kp.pt)) {
+            keypointsTmp.push_back(kp);
+        }
+    }
+    keypoints = keypointsTmp;
+
+Notice that we are using a temporary vector structure instead of utilizing `std::vector::erase()`, hence sacrificing space complexity for time.
+
+
+## Descriptors
+### MP.4 Keypoint Descriptors
+As described in section [MP.2](#mp2-keypoint-detection) above, the descriptors (BRIEF, ORB, FREAK, AKAZE, and SIFT) have been implemented in a unified function `detectorDescriptorFactory()` using the implemented classes of OpenCV.
+
+### MP.5 Descriptor Matching
+The descriptor matching procedure is implemented in the function `matchDescriptors()` in `matching2D_Student.cpp`. The function takes, among other arguments, the two strings `matcherType` and `selectorType` which determine the details of the descriptor matching.
+
+FLANN is chosen if the string `matcherType` is set to `MAT_FLANN`. The implementation is covered by the OpenCV library, i.e. by the line
+    
+    matcher = cv::FlannBasedMatcher::create();
+
+The k-nearest neighbor selection, is selected when the string `selectorType` is set to `SEL_KNN`. The implementation is given by (for the case of k=2):
+
+    vector<vector<cv::DMatch>> knnMatches;
+    matcher->knnMatch(descSource, descRef, knnMatches, 2);  // k=2
+    
+
+### MP.6 Descriptor Distance Ratio
+The descriptor distance ratio test ("Lowe's ratio test") is utilized when the k-NN selector has been chosen ([cf. above](#mp5-descriptor-matching)). It is implented for as ratio threshold of 0.8 as follows:
+
+    const float ratio_thresh = 0.8;
+    for (size_t i=0; i<knnMatches.size(); ++i)
+        if (knnMatches[0][i].distance < ratio_thresh * knnMatches[i][1].distance)
+            matches.push_back(knnMatches[i][0]);
+
+
+## Performance
+The results of the performance evaluation can be [Results.ods](./Results.ods) (OpenOffice Calc-file) which is contained in the highest directory of this repository.
+
+Central modifications are the addition of two outer for-loops which iterate over all eligible detector/descriptor combinations. This automates the performance evaluation of all detector/descriptor combinations.
+
+Calculation of averages (means) of detection of all keypoints, extraction of all descriptions, and the number of matched keypoints. 
+
+### MP.7 Performance Evaluation 1
+The number of keypoints on the preceding vehicle for all 10 images have been recorded for all available detectors. The results are available in table `Task MP.7` of [Results.ods](./Results.ods).
+Notice that the Harris detector has detected the least amount of keypoints and the FAST detector the most.
+
+
+### MP.8 Performance Evaluation 2
+The number of *all* matched keypoints (not only on the preceding vehicle) for all 10 images have been counted and the average number `avgMatchedKpts` is evaluated at the end of the main loop. Since this process is done automatically, and hence easily reproducible by calling `$>./2D_feature_tracking`, we have entered the average values into the table `Task MP.8` of [Results.ods](./Results.ods).
+
+
+### MP.9 Performance Evaluation 3
+According to our test results, we can rank the top 3 detector/descriptor combinations as follows:
+
+|Rank| Detector | Descriptor | Processing time [ms] |
+|----|----------|------------|:--------------------:|
+|1.  | ORB      | BRIEF      | 9.5                  |
+|2.  | FAST     | ORB        | 10.4                 |
+|3.  | ORB      | BRISK      | 12.6                 |
+
+Of course, such a ranking, performed using the full OpenCV-library on a cloud based VM-host can only give a partial answer. Further testing on embedded hardware and careful evaluation of the results is required until a full answer can be given.
+
+
+## Further Considerations
+The testing of the detectors and descriptors should be further automated and the results directly written to a plain text file (e.g. csv or tsv). In this way, the numbers could be extracted and transferred into the spreadsheets more easily.
+
+
+
 
 ## Dependencies for Running Locally
 * cmake >= 2.8
