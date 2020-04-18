@@ -1,7 +1,6 @@
 # SFND 2D Feature Tracking
 The contents of this repository represent my submission for the midterm project of the camera chapter of Udacity's Sensor Fusion Engineer nanodegree.
-
-The final goal of this and the succeeding projects is to develop a TTC (time-to-collision) estimator based on monocular camera images and Lidar data.
+The final goal of the camera chapter is to develop a TTC (time-to-collision) estimator based on monocular camera images and Lidar data.
 
 The purpose of this intermediate project is to develop a TTC estimator which only relies on monocular visual information. The detector is based on so-called keypoint detection and matching algorithms.
 
@@ -11,27 +10,26 @@ The following detectors and descriptors have been scrutinized in this project:
 
 **Keypoint descriptors:** SIFT, BRISK, BRIEF, ORB, FREAK, AKAZE
 
+The table below illustrates all the detector/descriptor combination which have tried out in the course of this project and which were functional in a technical sense. Analyzing and understanding their results is one of the goals of this project.
 
-|              | SIFT| BRISK| BRIEF| ORB | FREAK|AKAZE|
-|:------------:|:---:|:----:|:----:|:---:|:----:|:---:|
-| SIFT         |     |      |      |  -  |      |  -  |
-| (Harris)     |     |      |      |     |      |  -  |
-| (Shi-Tomasi) |     |      |      |     |      |  -  |
-| FAST         |     |      |      |     |      |  -  |
-| BRISK        |     |      |      |     |      |  -  |
-| ORB          |     |      |      |     |      |  -  |
-| AKAZE        |  -  |  -   |   -  |  -  |   -  |     |
+|              | SIFT     | BRISK    | BRIEF   | ORB     | FREAK   |AKAZE|
+|:------------:|:--------:|:--------:|:-------:|:-------:|:-------:|:---:|
+| SIFT         |  &#8226; |  &#8226; | &#8226; |         |  &#8226;|     |
+| (Harris)     |  &#8226; |  &#8226; | &#8226; | &#8226; |  &#8226;|     |
+| (Shi-Tomasi) |  &#8226; |  &#8226;  |  &#8226;  |  &#8226; |  &#8226;    |     |
+| FAST         |  &#8226; |  &#8226;  |  &#8226;  |  &#8226; |  &#8226;    |     |
+| BRISK        |  &#8226; |  &#8226;  |  &#8226;  |  &#8226; |  &#8226;    |     |
+| ORB          |  &#8226; |  &#8226;  |  &#8226;  |  &#8226; |  &#8226;    |     |
+| AKAZE        |          |             |      |     |      |  &#8226;   |
+
+Notice that the detectors in parentheses (Harris and Shi-Tomasi) were not required for our benchmark testing but where included nontheless. The Harris detector has been implemented as part of this assignment.
 
 
-Notice that the detectors in parentheses were not required for the benchmark but where included nontheless. The Harris detector has been implemented as part of this assignment.
-
-
-## Implementation
-The second largest change is the implementation of the function ´detectorDescriptorFactory´ which unifies the creation of OpenCV-based detectors and descriptors.
+# Discussion of Project Tasks
 
 ## Data Buffer
 ### MP.1 Data Buffer Optimization
-For the data buffer, my choice fell onto the well-known ring buffer implementation of the *boost library*,
+For the data buffer, our choice fell onto the well-known ring buffer implementation of the *boost library*,
 
     boost::circular_buffer<T> 
     
@@ -40,6 +38,7 @@ because of its readily available and proven implementation. Of course, a simpler
     std::vector<DataFrame> dataBuffer(dataBufferSize)
 
 hence circumventing the need for dynamic reallocation of the vector.
+
 
 
 ## Keypoints
@@ -68,27 +67,27 @@ This is done by the simple for-loop given by:
     keypoints = keypointsTmp;
 
 Notice that we are using a temporary vector structure instead of utilizing `std::vector::erase()`, hence sacrificing space complexity for time.
-
+Note, that a more sophisticated method to determine the region-of-interest (ROI) using the YOLO detector will be discussed in the following project.
 
 ## Descriptors
 ### MP.4 Keypoint Descriptors
-As described in section [MP.2](#mp2-keypoint-detection) above, the descriptors (BRIEF, ORB, FREAK, AKAZE, and SIFT) have been implemented in a unified function `detectorDescriptorFactory()` using the implemented classes of OpenCV.
+As described in section [MP.2](#mp2-keypoint-detection) above, the descriptors (BRIEF, ORB, FREAK, AKAZE, and SIFT) have been implemented in a unified function `detectorDescriptorFactory()` using the the OpenCV library. Notice that the return is `cv::Ptr<cv::Feature2D>` where `cv::Feature2D` is the common ancestor for all the descriptors.
 
 ### MP.5 Descriptor Matching
 The descriptor matching procedure is implemented in the function `matchDescriptors()` in `matching2D_Student.cpp`. The function takes, among other arguments, the two strings `matcherType` and `selectorType` which determine the details of the descriptor matching.
 
-FLANN is chosen if the string `matcherType` is set to `MAT_FLANN`. The implementation is covered by the OpenCV library, i.e. by the line
+FLANN (Fast Library for Approximate Nearest Neighbors) is chosen if the string `matcherType` is set to `MAT_FLANN`. The implementation is covered by the OpenCV library, i.e. by the line
     
     matcher = cv::FlannBasedMatcher::create();
 
-The k-nearest neighbor selection, is selected when the string `selectorType` is set to `SEL_KNN`. The implementation is given by (for the case of k=2):
+KNN (k-nearest neighbors) is selected when the string `selectorType` is set to `SEL_KNN`. The implementation is given by (for the case of k=2):
 
     vector<vector<cv::DMatch>> knnMatches;
     matcher->knnMatch(descSource, descRef, knnMatches, 2);  // k=2
     
 
 ### MP.6 Descriptor Distance Ratio
-The descriptor distance ratio test ("Lowe's ratio test") is utilized when the k-NN selector has been chosen ([cf. above](#mp5-descriptor-matching)). It is implented for as ratio threshold of 0.8 as follows:
+The descriptor distance ratio test ("Lowe's ratio test") is utilized when the k-NN selector has been chosen ([cf. above](#mp5-descriptor-matching)). It is implented for ratio threshold of `0.8` as follows:
 
     const float ratio_thresh = 0.8;
     for (size_t i=0; i<knnMatches.size(); ++i)
@@ -97,11 +96,14 @@ The descriptor distance ratio test ("Lowe's ratio test") is utilized when the k-
 
 
 ## Performance
-The results of the performance evaluation can be [Results.ods](./Results.ods) (OpenOffice Calc-file) which is contained in the highest directory of this repository.
+The results of the performance evaluation have been included in the spreadsheet [Results.ods](./Results.ods) (OpenOffice Calc-file) which is contained in the base directory of this repository.
 
-Central modifications are the addition of two outer for-loops which iterate over all eligible detector/descriptor combinations. This automates the performance evaluation of all detector/descriptor combinations.
+In order to automate the extensive testing, two outer for-loops have been added which iterate over all eligible detector/descriptor combinations. This simplifies the performance evaluation of all detector/descriptor combinations considerably.
 
-Calculation of averages (means) of detection of all keypoints, extraction of all descriptions, and the number of matched keypoints. 
+In addition, after iterating over all the images for a particular detector/descriptor combination, the following numbers are calculated:
+* Average number of all detected keypoints,
+* Average detection time per image,
+* Averade descriptor extraction time per image.
 
 ### MP.7 Performance Evaluation 1
 The number of keypoints on the preceding vehicle for all 10 images have been recorded for all available detectors. The results are available in table `Task MP.7` of [Results.ods](./Results.ods).
@@ -113,7 +115,7 @@ The number of *all* matched keypoints (not only on the preceding vehicle) for al
 
 
 ### MP.9 Performance Evaluation 3
-According to our test results, we can rank the top 3 detector/descriptor combinations as follows:
+According to our test results, we can rank the top 3 detector/descriptor combinations as follows (less processing time is better):
 
 |Rank| Detector | Descriptor | Processing time [ms] |
 |----|----------|------------|:--------------------:|
@@ -125,7 +127,7 @@ Of course, such a ranking, performed using the full OpenCV-library on a cloud ba
 
 
 ## Further Considerations
-The testing of the detectors and descriptors should be further automated and the results directly written to a plain text file (e.g. csv or tsv). In this way, the numbers could be extracted and transferred into the spreadsheets more easily.
+The testing of the detectors and descriptors should be further automated and the results directly written to a plain text file (e.g. csv or tsv). In this way, the numbers could be extracted and transferred into the spreadsheets more easily via simple copy & paste.
 
 
 
